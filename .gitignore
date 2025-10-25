@@ -29,3 +29,19 @@ policy_lp.lp
 # Third-party libs (若有自帶二進位，可忽略)
 lib/
 
+# build outputs
+build/
+*.o
+*.a
+*.so
+*.exe
+
+# generated reports / data
+advance_parameter_csv/
+*.xlsx
+*.csv
+policy_lp.lp
+
+# cmake junk (若有)
+CMakeFiles/
+CMakeCache.txt
