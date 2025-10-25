@@ -1,0 +1,31 @@
+# Build / binaries
+build/
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# CMake / Make
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+
+# VSCode / IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs / temps
+*.log
+*.tmp
+
+# Data / outputs
+advance_parameter_csv/
+policy_lp.lp
+*.xlsx
+*.csv
+
+# Third-party libs (若有自帶二進位，可忽略)
+lib/
+

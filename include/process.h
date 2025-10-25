@@ -1,4 +1,4 @@
-//process.h
+// process.h
 #pragma once
 #include <Eigen/Dense>
 #include <string>
@@ -43,7 +43,6 @@ RiskOutput build_liquidity_scaled_risk(
     const DataLoader& dl,          // 需 feat_TurnoverShare / VAL / GKVol
     int t,                         // 以第 t 天為基準
     const RiskConfig& cfg);
-
 
 // 2.4：估算交易成本；A_i 為「單邊金額（TWD）」；side_i: +1=買 / -1=賣 / 0=不交易
 // =============== 2.4 Cost Model（TW fee + tax + impact） ===========
@@ -91,8 +90,6 @@ struct BlackSwanOutput {
 BlackSwanOutput black_swan_scale(const DataLoader& dl, int t, const BlackSwanConfig& cfg, bool external_event=false);
 
 // 2.6：Stage-1 原始/校準/增強預測
-// 需要：特徵矩陣（當天第 t 橫斷面），可選：回溯期真實報酬（用於線性β）
-
 // =============== 2.6 Calibrated Forecast for Stage 1 ===============
 struct ForecastConfig {
     // 回歸設定（線性走步加權；GBDT 留接口）
@@ -125,5 +122,74 @@ ForecastOutput stage1_forecast(
     const std::optional<Eigen::MatrixXd>& next_day_returns = std::nullopt // (T×N)，若給就做線性回歸
 );
 
+// ==================== Excel / CSV 匯出介面（新增） ====================
+
+/**
+ * 將主要中間量與結果寫到 .xlsx：
+ * Sheets:
+ *  - "risk"       : Sigma_tilde, Cholesky_L, sigma_i, Dliq_i
+ *  - "corr_hint"  : 以 D^{-1} * Sigma_tilde * D^{-1} 近似還原的 Corr
+ *  - "cost"       : fee_buy / fee_sell / tax_sell / impact
+ *  - "black_swan" : m
+ *  - "stage1"     : rhat_raw
+ *  - "inputs"     : A, side, 以及 t 當日的 VAL / GKVol / TurnoverShare / Imbalance
+ *
+ * 需求：若編譯時定義 USE_XLSX=1，且專案已連結 libxlsxwriter，將輸出 xlsx；
+ *      否則請改呼叫 CSV 後備版本。
+ */
+void dump_to_excel(const std::string& xlsx_path,
+                   const DataLoader& dl, int t,
+                   const ProcessingConfig& px_cfg,
+                   const RiskConfig& risk_cfg,
+                   const CostConfig& cost_cfg,
+                   const BlackSwanConfig& bs_cfg,
+                   const ForecastConfig& fc_cfg,
+                   const Eigen::VectorXd& A,
+                   const Eigen::VectorXi& side,
+                   const std::optional<Eigen::MatrixXd>& next_day_returns = std::nullopt);
+
+/**
+ * 無第三方庫後備：把每張工作表輸出為獨立 CSV 檔，Excel 可直接開。
+ * 產出於 out_dir：
+ *  - risk_Sigma_tilde.csv, risk_Cholesky_L.csv, risk_sigma_i.csv, risk_Dliq_i.csv
+ *  - cost_fee_buy.csv, cost_fee_sell.csv, cost_tax_sell.csv, cost_impact.csv
+ *  - black_swan.csv
+ *  - stage1_rhat_raw.csv
+ *  - inputs_A.csv, inputs_side.csv
+ */
+void dump_to_excel_csv_fallback(const std::string& out_dir,
+                                const DataLoader& dl, int t,
+                                const ProcessingConfig& px_cfg,
+                                const RiskConfig& risk_cfg,
+                                const CostConfig& cost_cfg,
+                                const BlackSwanConfig& bs_cfg,
+                                const ForecastConfig& fc_cfg,
+                                const Eigen::VectorXd& A,
+                                const Eigen::VectorXi& side,
+                                const std::optional<Eigen::MatrixXd>& next_day_returns = std::nullopt);
+
+/**
+ * 便利函式：固定寫到 "advance_parameter.xlsx"（若未啟用 USE_XLSX，請改呼叫 CSV 版）。
+ */
+inline void save_advance_parameters_to_excel(const DataLoader& dl, int t,
+                                             const ProcessingConfig& px_cfg,
+                                             const RiskConfig& risk_cfg,
+                                             const CostConfig& cost_cfg,
+                                             const BlackSwanConfig& bs_cfg,
+                                             const ForecastConfig& fc_cfg,
+                                             const Eigen::VectorXd& A,
+                                             const Eigen::VectorXi& side,
+                                             const std::optional<Eigen::MatrixXd>& next_day_returns = std::nullopt)
+{
+    dump_to_excel("advance_parameter.xlsx",
+                  dl, t, px_cfg, risk_cfg, cost_cfg, bs_cfg, fc_cfg,
+                  A, side, next_day_returns);
+}
+
+void dump_trade_plan_excel(const std::string& out_path,
+                           const DataLoader& dl, int t,
+                           const Eigen::VectorXd& A_socp,
+                           const Eigen::VectorXi& side_socp,
+                           double P0);
 } // namespace process
 
