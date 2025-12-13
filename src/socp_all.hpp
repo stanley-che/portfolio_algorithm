@@ -1,0 +1,9 @@
+#pragma once
+#include "socp_types.hpp"
+#include "socp_config.hpp"
+#include "socp_debug.hpp"
+#include "socp_pwl.hpp"
+#include "socp_math.hpp"
+#include "socp_scs_backend.hpp"
+#include "socp_solver.hpp"
+#include "socp_generator.hpp"

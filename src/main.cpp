@@ -36,11 +36,14 @@ static void print_vector_summary(const Eigen::VectorXd& v, const std::string& na
 int main() {
     std::cout << "--- Two-Stage Portfolio Optimization (TW Equities) ---\n\n";
 
+    // ===================== 預先編譯外部模組 =====================
+    std::cout << "[Compile] make_meta_twse.cpp ...\n";
+    
     // CPU/threads 設定
     Eigen::setNbThreads(1);
-#ifdef _OPENMP
-    omp_set_num_threads(8);
-#endif
+	#ifdef _OPENMP
+    	omp_set_num_threads(8);
+	#endif
 
     // 輸出目錄（存在則忽略）
     ::mkdir("./advance_parameter_csv", 0755);
@@ -49,7 +52,7 @@ int main() {
     // 0) ETL
     // =========================================================================
     std::cout << "[0] Loading data & building features...\n";
-    DataLoader loader("/mnt/c/backup_portfolio_dsa/portfolio_dsa/cpp_core/src");
+    DataLoader loader("/mnt/c/backup_portfolio_dsa/portfolio_dsa/cpp_core");
     if (!loader.loadDailyPanelAndBuildFeatures()) {
         std::cerr << "[FATAL] loadDailyPanelAndBuildFeatures failed.\n";
         return 1;

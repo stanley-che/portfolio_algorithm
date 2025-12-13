@@ -41,6 +41,12 @@ static bool http_get(const string& url, string& body){
     curl_easy_cleanup(h);
     return rc==CURLE_OK;
 }
+// ---- 加在前面 utils 區 ----
+static void strip_bom(std::string& s){
+    if (s.size() >= 3 &&
+        (unsigned char)s[0]==0xEF && (unsigned char)s[1]==0xBB && (unsigned char)s[2]==0xBF)
+        s.erase(0,3);
+}
 
 // 轉 yyyy-mm-dd / ROC yyyy/mm/dd → YYYYMMDD
 static string toYYYYMMDD(const string& d){

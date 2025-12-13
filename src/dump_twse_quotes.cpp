@@ -1,4 +1,4 @@
-// g++ -O2 -std=c++17 get_last_60d.cpp -lcurl -o get_last_60d
+// g++ -O2 -std=c++17 dump_twse_quotes.cpp -lcurl -o twse
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include <iostream>
@@ -120,8 +120,8 @@ int main(int argc, char** argv){
 
     // 3) 準備輸出
     std::ofstream fout("daily_60d.csv", std::ios::binary);
-    const unsigned char bom[3] = {0xEF,0xBB,0xBF};
-    fout.write((const char*)bom,3);
+    //const unsigned char bom[3] = {0xEF,0xBB,0xBF};
+    //fout.write((const char*)bom,3);
     fout << "Code,Name,Date,Open,High,Low,Close,Change,Volume,Turnover,Trades\n";
 
     // 4) 每檔逐月抓，保留最近 60 天

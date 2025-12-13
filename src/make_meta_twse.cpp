@@ -1,4 +1,4 @@
-// g++ -O2 -std=c++17 src/make_meta_twse.cpp -lcurl -o make_meta_twse
+
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include <bits/stdc++.h>
@@ -58,6 +58,12 @@ static bool looks_like_etf(const string& code, const string& market, const strin
     if (t.find("受益")!=string::npos) return true; // 受益證券
     return false;
 }
+// --- add: strip BOM helper ---
+static void strip_bom(std::string& s){
+    if (s.size() >= 3 &&
+        (unsigned char)s[0]==0xEF && (unsigned char)s[1]==0xBB && (unsigned char)s[2]==0xBF)
+        s.erase(0,3);
+}
 
 // ---------- main ----------
 int main(int argc, char** argv){
@@ -68,16 +74,26 @@ int main(int argc, char** argv){
     string daily_csv = argv[1];
 
     // 1) 讀 daily_60d.csv 取用到的代號集合
-    ifstream f(daily_csv);
-    if(!f.is_open()){ cerr<<"open fail: "<<daily_csv<<"\n"; return 1; }
-    string header; if(!getline(f, header)){ cerr<<"empty: "<<daily_csv<<"\n"; return 1; }
-    auto h = splitCsv(header);
-    int iCode=-1;
-    for(int i=0;i<(int)h.size();++i){
-        string k = lower(trim(h[i]));
-        if(k=="code" || k=="symbol"){ iCode=i; break; }
-    }
-    if(iCode<0){ cerr<<"daily_60d.csv needs Code/symbol column\n"; return 1; }
+	ifstream f(daily_csv);
+	if(!f.is_open()){ cerr<<"open fail: "<<daily_csv<<"\n"; return 1; }
+	string header;
+	if(!getline(f, header)){ cerr<<"empty: "<<daily_csv<<"\n"; return 1; }
+	strip_bom(header);                     // ★ 新增：去掉 UTF-8 BOM
+	auto h = splitCsv(header);
+	
+	int iCode = -1;
+	for (int i=0; i<(int)h.size(); ++i){
+	    string k = lower(trim(h[i]));
+	    // 放寬幾個常見欄名
+	    if (k=="code" || k=="symbol" || k.find("代號")!=string::npos){
+	        iCode = i; break;
+	    }
+	}
+	if (iCode < 0){
+	    cerr << "daily_60d.csv needs Code/symbol column\n";
+	    return 1;
+	}
+
     set<string> used_syms;
     for(string line; getline(f,line); ){
         if(line.empty()) continue;
@@ -126,7 +142,7 @@ int main(int argc, char** argv){
     cerr<<"twse meta rows: "<<mp.size()<<"\n";
 
     // 4) 生成 meta.csv（只輸出 used_syms）
-    ofstream out("src/meta.csv");
+    ofstream out("meta.csv");
     out << "symbol,lot,odd_lot_unit,industry,group,tradable_flag\n";
 
     int wrote=0, miss=0, etfcnt=0;

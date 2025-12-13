@@ -1,0 +1,38 @@
+# 1) 取消任何未完成的 rebase/merge 狀態
+git rebase --abort 2>/dev/null || true
+git merge  --abort 2>/dev/null || true
+
+# 2) 回到乾淨的當前提交（丟掉剛才拉遠端造成的衝突工作樹）
+git reset --hard HEAD
+
+# 3) 確保把產生物忽略（避免再被追蹤）
+cat >> .gitignore <<'EOF'
+# build outputs
+build/
+*.o
+*.a
+*.so
+*.exe
+
+# generated reports / data
+advance_parameter_csv/
+*.xlsx
+*.csv
+policy_lp.lp
+
+# cmake junk (若有)
+CMakeFiles/
+CMakeCache.txt
+EOF
+
+# 4) 從索引裡移除已被追蹤的產生物（不刪本機檔）
+git rm -r --cached build advance_parameter_csv policy_lp.lp 2>/dev/null || true
+
+# 5) 提交這次清理
+git add .gitignore
+git commit -m "chore: ignore build & generated artifacts" || true
+
+# 6) 以本地歷史覆蓋遠端（安全強推）
+git fetch origin
+git push -u origin main --force-with-lease
+
